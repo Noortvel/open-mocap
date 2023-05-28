@@ -1,0 +1,140 @@
+﻿@page "{id:Guid}"
+@model OpenMocap.Front.Pages.VideoModel
+@{
+}
+<h1>Video</h1>
+<div id="load-info">
+    <p>Processing...</p>
+    <p id="load-frames-info">-</p>
+    <div class="spinner-border" role="status"></div>
+</div>
+<div id="video-view" class="d-none">
+    <button id="download-json" type="button" class="btn btn-success">Download points</button>
+    <a id="download-json-href"></a>
+    <div class="row">
+        <div class="col-sm">
+            <button id="prevFrameBtn" type="button" class="btn btn-primary">Pref frame</button>
+        </div>
+        <div class="col-sm">
+            <p id="frames-count-text">[0/0]</p>
+        </div>
+        <div class="col-sm">
+            <button id="nextFrameBtn" type="button" class="btn btn-primary">Next frame</button>
+        </div>
+    </div>
+    <canvas id="canvas-view" style="border:1px solid #000000;" resize></canvas>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.js"></script>
+    <script>
+
+        const hubConnection = new signalR.HubConnectionBuilder()
+            .withUrl('@(OpenMocap.Front.SignalR.VideoHub.Url)')
+            .build();
+
+
+        hubConnection.on("VideoProgress", videoProgress);
+        hubConnection.on("MocapResult", mocapResult);
+
+        hubConnection
+            .start()
+            .then(registerCallbacks)
+            ;
+
+        function registerCallbacks() {
+            let operationId = '@(this.Model.OperationId)';
+            hubConnection.invoke("RegisterClientReciveVideoIdProgress", operationId)
+                .catch(function (err) {
+                    return console.error(err.toString());
+                });
+        }
+
+        //Load info
+        let loadView = document.getElementById("load-info")
+        let loadFramesInfo = document.getElementById('load-frames-info')
+        function videoProgress(message) {
+            let current = message['current'];
+            let max = message['max'];
+            let objStr = current + '/' + max;
+            loadFramesInfo.innerText = objStr;
+            if (current >= max) {
+                loadView.hidden = true
+            }
+        }
+
+        let videoView = document.getElementById('video-view')
+        let canvasView = document.getElementById('canvas-view')
+
+        let points = null;
+        function mocapResult(message) {
+            console.log(message)
+            let downloadJsonHref = document.getElementById('download-json-href')
+            document.getElementById('download-json').onclick = () => { downloadJsonHref.click() };
+
+            let text = JSON.stringify(message)
+            let name = 'video_' + message['operationId'].replace('.', '_') + '_keypoints.json'
+            downloadJsonHref.href = URL.createObjectURL(new Blob([text], { type: `text/json` }));
+            downloadJsonHref.download = name;
+
+            let videInfo = message['info']
+            if(videInfo != null) {
+                canvasView.width = videInfo['width']
+                canvasView.height = videInfo['height']
+            }
+
+            points = message['points'];
+            videoView.classList.remove("d-none");
+            renderCurrentFrame();
+            document.getElementById('prevFrameBtn').onclick = prevFrame
+            document.getElementById('nextFrameBtn').onclick = nextFrame
+        }
+
+        let framesCountText = document.getElementById("frames-count-text");
+        let currentFrame = 0
+        let maxFrames = 0
+        function renderCurrentFrame()
+        {
+            if (points == null) {
+                return
+            }
+
+            maxFrames = points.length - 1
+
+            framePoints = points[currentFrame]
+            const ctx = canvasView.getContext("2d");
+            ctx.clearRect(0, 0, canvasView.width, canvasView.height);
+            for (const p of framePoints) {
+                const x = p['x'];
+                const y = p['y'];
+                const radius = 5;
+
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, 2 * Math.PI, false);
+                ctx.fillStyle = 'red';
+                ctx.fill();
+                ctx.lineWidth = 5;
+                ctx.strokeStyle = '#003300';
+                ctx.stroke();
+            }
+
+            framesCountText.innerText = '[' + currentFrame + '/' + maxFrames + ']'
+
+        }
+
+        function nextFrame() {
+            if (currentFrame < maxFrames) {
+                currentFrame++
+                renderCurrentFrame()
+            }
+        }
+
+        function prevFrame() {
+            if (currentFrame > 1) {
+                currentFrame--
+                renderCurrentFrame()
+            }
+        }
+    </script>
+
+}

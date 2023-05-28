@@ -1,0 +1,44 @@
+./ffmpeg.exe -i new_video.mp4 -f image2pipe - > out.txt
+./ffmpeg.exe -i movie_trim.mp4 -f image2pipe zmq:tcp://127.0.0.1:8055
+
+
+./ffprobe.exe -v error -select_streams v:0 -count_packets `
+     -show_entries stream=nb_read_packets -of csv=p=0 video2.h264
+
+./ffprobe -v error -select_streams v -show_entries stream=width,height -of csv=p=0:s=x input.m4v
+
+
+
+./Binary/ffmpeg.exe -i ExamplesVideos/new_video.mp4 -c:v png -f image2pipe - > out.txt
+
+
+./Binary/ffmpeg.exe -i ExamplesVideos/new_video.mp4 -c:v png -f image2pipe zmq:tcp://127.0.0.1:5566
+
+
+./Binary/ffmpeg.exe -re -i ExamplesVideos/new_video.mp4 -f mpegts zmq:tcp://127.0.0.1:5566
+
+
+./Binary/ffplay.exe zmq:tcp://127.0.0.1:5566
+
+
+
+./Binary/ffplay.exe -i ExamplesVideos/new_video.mp4 -f mpegts tcp://127.0.0.1:5566?listen=0
+
+
+./Binary/ffmpeg.exe -i ExamplesVideos/new_video.mp4 -c:v png -f image2pipe zmq:tcp://127.0.0.1:5566
+
+./Binary/ffmpeg.exe -i ExamplesVideos/new_video.mp4 -c copy -listen 1 -f image2pipe http://server:port
+
+./Binary/ffmpeg.exe -i ExamplesVideos/new_video.mp4 -listen 1 -f mp4 -movflags frag_keyframe+empty_moov http://localhost:8080
+
+
+./Binary/ffmpeg.exe -i ExamplesVideos/new_video.mp4 -listen 1 -f mp4 -movflags frag_keyframe+empty_moov http://localhost:8080
+
+./Binary/ffmpeg.exe -i ExamplesVideos/new_video.mp4 -c copy -f image2pipe http://localhost:5126
+
+
+
+./Binary/ffmpeg.exe -i ExamplesVideos/new_video.mp4 -c:v png -f image2pipe -headers "Video-Id: id-guid" http://localhost:5126/video_bytes_push
+
+.\Binary\ffmpeg.exe -i .\ExamplesVideos\movie_trim.mp4 -c copy -movflags faststart .\ExamplesVideos\stream_ready.mp4
+ .\Binary\ffmpeg.exe -i .\ExamplesVideos\movie_001.mp4 -c copy -movflags faststart -f segment -segment_time 1 -y output%03d.mp4

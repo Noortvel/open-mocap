@@ -1,0 +1,27 @@
+﻿@page
+@model OpenMocap.Front.Pages.UploadModel
+@{
+    ViewData["Title"] = "Upload";
+}
+<h1>Video file upload</h1>
+<form method=post enctype=multipart/form-data action="/mocap/process_async" onsubmit="send(event,this)">
+    <input type=file name=video>
+    <input class="btn btn-success" id="upload_btn" type=submit value=Upload>
+</form>
+
+@section Scripts {
+<script>
+    function send(e, form) {
+        fetch(form.action, { method: 'post', body: new FormData(form) })
+            .then(async (response) => {
+                if (response.ok) {
+                    let r_json = await response.json()
+                    window.location.href = '/Video/' + r_json['id']
+                }
+            })
+
+        e.preventDefault();
+        }
+</script>
+
+}

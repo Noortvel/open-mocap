@@ -1,0 +1,34 @@
+services:
+  worker1:
+    build:
+      context: .
+      dockerfile: Dockerfile.OpenMocap
+    ports:
+      - "5001:80"
+    environment:
+      - Addresses__InternalHost=localhost
+      - Addresses__InternalPort=80
+  
+  worker2:
+    build:
+      context: .
+      dockerfile: Dockerfile.OpenMocap
+    ports:
+      - "5002:80"
+    environment:
+      - Addresses__InternalHost=localhost
+      - Addresses__InternalPort=80
+
+  front:
+    build:
+      context: .
+      dockerfile: Dockerfile.OpenMocap.Front
+    ports:
+      - "5000:80"
+
+    environment:
+      - Addresses__SelfHost=host.docker.internal
+      - Addresses__SelfPort=5000
+      - Addresses__WorkerHost=host.docker.internal
+      - Addresses__WorkerPorts__0=5001
+      - Addresses__WorkerPorts__1=5002
